@@ -8,7 +8,7 @@
  * =============================================================================
  */
 
-import {DataType, ENV, io, memory, ones, randomNormal, Scalar, scalar, serialization, sum, Tensor, tensor1d, tensor2d, tensor3d, train, zeros} from '@tensorflow/tfjs-core';
+import {DataType, ENV, io, memory, ones, randomNormal, Scalar, scalar, serialization, sum, Tensor, tensor, tensor1d, tensor2d, tensor3d, train, zeros} from '@tensorflow/tfjs-core';
 import {ConfigDict} from '@tensorflow/tfjs-core/dist/serialization';
 
 import {LayersModel} from './engine/training';
@@ -3117,5 +3117,74 @@ describeMathCPU('Functional-model saving and loading', () => {
     const c = randomNormal([2, 64]);
     const output = model.predict([x, s, c]) as Tensor[];
     expect(output.length).toEqual(10);
+  });
+});
+
+describe('1773', () => {
+  fit('1773', async () => {
+    const main_input = tfl.layers.input({
+        shape: [2, 3, 3], name: 'main_input' });
+
+    let x = tfl.layers.conv2d({
+      kernelSize: [4, 4],
+      filters: 75,
+      activation: 'linear',
+      dataFormat: "channelsFirst",
+      padding: 'same',
+      useBias: false,
+      kernelRegularizer: tfl.regularizers.l2({l2: 0.0001})
+    }).apply(main_input);
+
+    x = tfl.layers.batchNormalization().apply(x);
+    // x = tfl.layers.batchNormalization({ axis: 1 }).apply(x);
+    x = tfl.layers.leakyReLU().apply(x);
+
+    x = tfl.layers.conv2d({
+      filters: 1,
+      kernelSize: [1, 1],
+      activation: 'linear',
+      dataFormat: "channelsFirst",
+      padding: 'same',
+      name: 'value_head_conv2d',
+      useBias: false,
+      kernelRegularizer: tfl.regularizers.l2({
+        l2: 0.0001
+      }),
+    }).apply(x);
+
+    // x = tfl.layers.batchNormalization({
+    //   axis: 1, name: 'value_head_batch_normalization' }).apply(x);
+    x = tfl.layers.leakyReLU({ name: 'value_head_leaky_relu_1' }).apply(x);
+
+    x = tfl.layers.flatten({ name: 'value_head_flatten' }).apply(x);
+
+    x = tfl.layers.dense({
+      units: 1,
+      useBias: false,
+      activation: 'tanh',
+      kernelRegularizer: tfl.regularizers.l2({
+        l2: 0.0001
+      }),
+      name: 'output_1'
+    }).apply(x) as tfl.SymbolicTensor;
+
+    const model = tfl.model({ inputs: [main_input], outputs: [x] });
+    model.compile({
+      loss: { 'output_1': 'meanSquaredError' },
+      optimizer: train.sgd(0.1),
+    });
+
+    model.summary();
+
+    const model_input = tensor([[[[1,0,0],[1,1,0],[0,0,0]],[[0,0,1],[0,0,0],[1,1,0]]]])
+    const model_output = tensor([[1]]);
+
+    await model.fit(model_input, { 'output_1': model_output }, {
+      epochs: 10,
+      callbacks: {
+        onEpochEnd: async (epoch, log) => {
+          console.log(`Epoch ${epoch}: loss = ${log.loss}`);
+        }
+      }});
   });
 });

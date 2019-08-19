@@ -95,6 +95,10 @@ function regularNormalizeBatchInTraining(
            const variance = meanAndVariance.variance;
            const normed =
                batchNormalization(x, mean, variance, beta, gamma, epsilon);
+           console.log(
+               `DEBUG400: normed.shape=${JSON.stringify(normed.shape)}; ` +
+               `mean.shape=${JSON.stringify(mean.shape)}; ` +
+               `variance.shape=${JSON.stringify(variance.shape)}; `);  // DEBUG
            return [normed, mean, variance];
          }) as [Tensor, Tensor, Tensor];
 }
@@ -120,10 +124,12 @@ function broadcastNormalizeBatchInTraining(
     x: Tensor, gamma: Tensor, beta: Tensor, reductionAxes: number[],
     epsilon = 1e-3): [Tensor, Tensor, Tensor] {
   return tidy(() => {
+           console.log(`DEBUG210`);  // DEBUG
            const meanAndVariance = tfc.moments(x, reductionAxes);
            const mean = meanAndVariance.mean;
            const variance = meanAndVariance.variance;
            const targetShape: number[] = [];
+           console.log(`DEBUG240`);  // DEBUG
            for (const axis of math_utils.range(0, x.rank)) {
              if (reductionAxes.indexOf(axis) !== -1) {
                targetShape.push(1);
@@ -131,6 +137,7 @@ function broadcastNormalizeBatchInTraining(
                targetShape.push(x.shape[axis]);
              }
            }
+           console.log(`DEBUG270`);  // DEBUG
            const broadcastMean = mean.reshape(targetShape);
            const broadcastVariance = variance.reshape(targetShape);
            const broadcastGamma =
@@ -140,6 +147,10 @@ function broadcastNormalizeBatchInTraining(
            const normed = batchNormalization(
                x, broadcastMean, broadcastVariance, broadcastBeta,
                broadcastGamma, epsilon);
+           console.log(
+               `DEBUG300: normed.shape=${JSON.stringify(normed.shape)}; ` +
+               `mean.shape=${JSON.stringify(mean.shape)}; ` +
+               `variance.shape=${JSON.stringify(variance.shape)}; `);  // DEBUG
            return [normed, mean, variance];
          }) as [Tensor, Tensor, Tensor];
 }
@@ -160,9 +171,12 @@ export function normalizeBatchInTraining(
     epsilon = 1e-3): [Tensor, Tensor, Tensor] {
   if (util.arraysEqual(
           reductionAxes.slice().sort(), math_utils.range(0, x.rank - 1))) {
+    console.log('DEBUG120: regularNormalizeBatchInTraining');  // DEBUG
     return regularNormalizeBatchInTraining(
         x, gamma, beta, reductionAxes, epsilon);
   } else {
+    // axis: 1
+    console.log('DEBUG120: broadcastNormalizeBatchInTraining');  // DEBUG
     return broadcastNormalizeBatchInTraining(
         x, gamma, beta, reductionAxes, epsilon);
   }
@@ -334,6 +348,7 @@ export class BatchNormalization extends Layer {
       const ndim = inputShape.length;
       const reductionAxes = math_utils.range(0, ndim);
       const axis = this.axis >= 0 ? this.axis : (this.axis + ndim);
+      console.log(`axis = ${axis}`);  // DEBUG
       reductionAxes.splice(axis, 1);
       const broadcastShape = generic_utils.pyListRepeat(1, ndim);
       broadcastShape[axis] = inputShape[axis];
@@ -367,6 +382,8 @@ export class BatchNormalization extends Layer {
       if (!training) {
         return normalizeInference();
       }
+
+      console.log(`reductionAxes = ${JSON.stringify(reductionAxes)}`);  // DEBUG
 
       const [normedTraining, mean, variance] = normalizeBatchInTraining(
           input, this.gamma.read(), this.beta.read(), reductionAxes,
