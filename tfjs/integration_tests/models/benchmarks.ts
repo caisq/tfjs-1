@@ -106,16 +106,16 @@ describe('TF.js Layers Benchmarks', () => {
     }
     const pyEnvironmentInfo = suiteLog.environmentInfo;
     const pyEnvironmentId =
-        log ? await addEnvironmentInfoToFirestore(pyEnvironmentInfo) : null;
+        (log && isNodeJS) ? await addEnvironmentInfoToFirestore(pyEnvironmentInfo) : null;
     environmentInfo.systemInfo = pyEnvironmentInfo.systemInfo;
     environmentInfo.cpuInfo = pyEnvironmentInfo.cpuInfo;
     environmentInfo.memInfo = pyEnvironmentInfo.memInfo;
 
     // Add environment info to firestore and retrieve the doc ID.
     const tfjsEnvironmentId =
-        log ? await addEnvironmentInfoToFirestore(environmentInfo) : null;
+        (log && isNodeJS) ? await addEnvironmentInfoToFirestore(environmentInfo) : null;
     const versionSetId =
-        log ? await addVersionSetToFirestore(versionSet) : null;
+        (log && isNodeJS) ? await addVersionSetToFirestore(versionSet) : null;
     if (isNodeJS) {
       versionSet.commitHashes = common.getCommitHashesFromArgs(process.argv);
     } else {
@@ -163,6 +163,8 @@ describe('TF.js Layers Benchmarks', () => {
             `Unsupported modelFormat for model "${modelName}": ` +
             `${JSON.stringify(modelFormat)}`);
       }
+
+      console.log(`100`);  // DEBUG
 
       const functionNames = Object.keys(taskGroupLog) as ModelFunctionName[];
       if (functionNames.length === 0) {
@@ -273,6 +275,8 @@ describe('TF.js Layers Benchmarks', () => {
               `Unknown task "${functionName}" from model "${modelName}"`);
         }
 
+        console.log(`200`);  // DEBUG
+
         tfc.dispose({xs, ys});
 
         tfjsRuns.push(tfjsRun);
@@ -283,12 +287,17 @@ describe('TF.js Layers Benchmarks', () => {
     }
 
     if (log) {
-      console.log(
-          `Writing ${tfjsRuns.length} TensorFlow.js TaskLogs to Firestore...`);
-      await addBenchmarkRunsToFirestore(tfjsRuns);
-      console.log(`Writing ${pyRuns.length} Python TaskLogs to Firestore...`);
-      await addBenchmarkRunsToFirestore(pyRuns);
-      console.log(`Done.`);
+      if (isNodeJS) {
+        console.log(
+            `Writing ${tfjsRuns.length} TensorFlow.js TaskLogs to Firestore...`);
+        await addBenchmarkRunsToFirestore(tfjsRuns);
+        console.log(`Writing ${pyRuns.length} Python TaskLogs to Firestore...`);
+        await addBenchmarkRunsToFirestore(pyRuns);
+        console.log(`Done.`);
+      } else {
+        console.log(`tfjsRuns=${JSON.stringify(tfjsRuns)}`);  // DEBUG
+        console.log(`pyRuns=${JSON.stringify(pyRuns)}`);  // DEBUG
+      }
     }
   });
 });
