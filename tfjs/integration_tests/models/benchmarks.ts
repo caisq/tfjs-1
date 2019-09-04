@@ -295,6 +295,9 @@ describe('TF.js Layers Benchmarks', () => {
         await addBenchmarkRunsToFirestore(pyRuns);
         console.log(`Done.`);
       } else {
+        console.log(`versionSet = ${JSON.stringify(versionSet)}`);  // DEBUG
+        console.log(`pyEnvironmentInfo = ${JSON.stringify(pyEnvironmentInfo)}`);  // DEBUG
+        console.log(`environmentInfo = ${JSON.stringify(environmentInfo)}`);  // DEBUG
         console.log(`tfjsRuns=${JSON.stringify(tfjsRuns)}`);  // DEBUG
         console.log(`pyRuns=${JSON.stringify(pyRuns)}`);  // DEBUG
       }

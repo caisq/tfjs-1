@@ -208,11 +208,14 @@ if [[ "${IS_TFJS_NODE}" == "1" ]]; then
 else
   echo "Starting benchmark karma tests in the browser..."
   LOG_FILE="$(mktemp --suffix=.log)"
-  yarn karma start karma.conf.layers.js \
+
+  yarn karma start --watch false karma.conf.layers.js \
       "${LOG_FLAG}" \
       --hashes="{\"tfjs-core\":\"${HASH_CORE}\",\"tfjs-layers\":\"${HASH_LAYERS}\",\"tfjs-converter\":\"${HASH_CONVERTER}\",\"tfjs-data\": \"${HASH_DATA}\"}" |
       tee -a ${LOG_FILE}
   echo "LOG_FILE content:"  # DEBUG
+
   cat "${LOG_FILE}"  # DEBUG
+  echo "LOG_FILE = ${LOG_FILE}"  # DEBUG
   rm "${LOG_FILE}"
 fi

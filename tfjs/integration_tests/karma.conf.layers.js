@@ -76,6 +76,6 @@ const karmaTypescriptConfig = {
       client: {
         jasmine: {random: false},
         args: args
-      }
+      },
     });
   };

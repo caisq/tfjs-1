@@ -48,7 +48,8 @@ module.exports = function(config) {
       '**/*.ts': ['karma-typescript'],  // *.tsx for React Jsx
     },
     karmaTypescriptConfig,
-    reporters: ['progress', 'karma-typescript'],
+    // reporters: ['progress', 'karma-typescript'],
+    reporters: ['karma-typescript'],
     browsers: ['Chrome'],
     browserStack: {
       username: process.env.BROWSERSTACK_USERNAME,
